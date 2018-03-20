@@ -1,4 +1,5 @@
 'use strict'
+const webpack = require('webpack')
 const path = require('path')
 const utils = require('./utils')
 const config = require('../config')
@@ -23,10 +24,14 @@ module.exports = {
       : config.dev.assetsPublicPath
   },
   resolve: {
+    // extensions: ['.js', '.vue', '.json', '.scss'],
     extensions: ['.js', '.vue', '.json'],
     alias: {
       'vue$': 'vue/dist/vue.esm.js',
       '@': resolve('src'),
+      // 'jquery-ui': 'jquery-ui-dist/jquery-ui.js', 
+      // vendor: path.resolve(__dirname, 'src/vendor/'), 
+      // styles: resolve('src/assets/scss') ,
     }
   },
   module: {
@@ -67,6 +72,13 @@ module.exports = {
       }
     ]
   },
+  plugins: [
+      new webpack.ProvidePlugin({
+          'jQuery': 'jquery',
+          '$': 'jquery',
+          'global.jQuery': 'jquery'
+      })
+  ],
   node: {
     // prevent webpack from injecting useless setImmediate polyfill because Vue
     // source contains it (although only uses it if it's native).

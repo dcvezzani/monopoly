@@ -4,6 +4,13 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 
+window.jQuery = require('jquery');
+window.$ = window.jQuery;
+window.$ = $.extend(require('jquery-ui-dist/jquery-ui.js'))
+
+// yarn add node-sass sass-loader
+import './assets/sass/main.scss'
+
 import VueSocketio from 'vue-socket.io';
 Vue.use(VueSocketio, 'http://games.reliacode.com:8085');
 
