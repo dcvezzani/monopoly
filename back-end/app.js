@@ -77,19 +77,19 @@ io.on('connection', function(socket){
   socket.on('initGameBoard', function(userId){
     initGameBoard((board) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board});
+      io.emit('renderGameBoard', {userId, board, index: game.index});
     })
   });
   socket.on('placeGamePiece', function(userId, gp){
     placeGamePiece(gp, (board) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board});
+      io.emit('renderGameBoard', {userId, board, index: game.index});
     })
   });
   socket.on('removeGamePiece', function(userId, gp){
     removeGamePiece(gp, (board) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board});
+      io.emit('renderGameBoard', {userId, board, index: game.index});
     })
   });
 

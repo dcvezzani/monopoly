@@ -1,5 +1,6 @@
 <template>
   <div class="monopoly">
+    <input @blur="setUserId" ref="userId" type="text" :class="[(userId.length > 0) ? 'user-id-set' : 'user-id-unset']" />
     <div id="game-board">
     </div>
   </div>
@@ -9,7 +10,7 @@
 const _ = require('lodash');
 
 window.drawGamePiece = (gp) => {
-  let gpDiv = $('<div id="' + gp.uuid + '" class="game-piece game-piece-' + gp.type + '"></div>').draggable({ 
+  let gpDiv = $('<div id="' + gp.uuid + '" class="game-piece game-piece-' + gp.type + '" class="game-piece"></div>').draggable({ 
     containment: "#game-board", 
     scroll: false, 
     opacity: 0.7,
@@ -22,12 +23,19 @@ window.drawGamePiece = (gp) => {
   });
   $("#game-board").append(gpDiv);
 
+  let top = $("div#game-board")[0].offsetTop
+  let left = parseInt($("div#game-board").css('marginLeft')); // 67; div#game-board; margin-left
+
   let x = (gp.col * 20);
   let y = (gp.row * 20);
 
-  console.log(["x, y:", x, y, `${x}px`, `${y}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
+  console.log(["drawGamePiece:", x, y, left, top, gp.col, gp.row, `${x}px`, `${y}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
 
-  $(`#${gp.uuid}`).animate({ top: `${y}px`, left: `${x}px`});
+  // $(`#${gp.uuid}`).animate({ top: `${y}px`, left: `${x}px`}, 400, 'swing', ()=>{
+  //   $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
+  // });
+  $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
+  
 };
 
 export default {
@@ -36,6 +44,8 @@ export default {
     return {
       msg: "Let's play Monopoly!", 
       gameBoard: null, 
+      index: {}, 
+      userId: '', 
     }
   }, 
   sockets:{
@@ -46,14 +56,18 @@ export default {
       console.log('this method was fired by the socket server. eg: io.emit("customEmit", data)')
     }, 
     renderGameBoard: function(data){
-      console.log(["data:", data])
+      //console.log(["data:", data])
 
       if (_.has(data, "board")) {
-        this.renderGameBoard(data.board);
+        this.renderGameBoard(data.userId, data.board, data.index);
       }
     }, 
   },
   methods: {
+    setUserId: function(){
+      // console.log(['this.$refs.userId', this.$refs.userId.value]);
+      this.userId = this.$refs.userId.value;
+    },
     clickButton: function(val){
       this.$socket.emit('emitMethod', val);
     }, 
@@ -82,7 +96,23 @@ export default {
       this.gameBoard[ridx][cidx] = [];
       cb();
     }, 
-    renderGameBoard: function(board){
+    renderGameBoard: function(userId, board, index){
+      this.gameBoard = JSON.parse(JSON.stringify(board));
+
+      let keys = Object.keys(index);
+      // console.log(["board, index:", board, index, keys, this.index])
+      keys.forEach ( gpid => { 
+        // console.log(["this.index, gpid:", _.has(this.index, gpid), this.userId, userId, this.userId !== userId, (!_.has(this.index, gpid) || this.userId !== userId)]);
+        let gp = index[gpid];
+        if (!_.has(this.index, gpid) || this.userId !== userId) {
+          console.log(['move initiated from server']);
+          $(`#${gpid}`).remove();
+          this.drawGamePieces([gp]);
+          this.index[gpid] = gp;
+        }
+      });
+    }, 
+    xrenderGameBoard: function(board){
       let isInitLoaded = false;
       if (_.isNil(this.gameBoard)) {
         this.gameBoard = JSON.parse(JSON.stringify(board));
@@ -118,13 +148,17 @@ export default {
   
     $( "#game-board" ).droppable({
       drop: function( event, ui ) {
-        console.log(["event, ui:", event, ui, ui.helper, ui.helper[0].id])
-        let top = parseInt($("div#app").css('marginTop')); // 60;  div#app; margin-top
-        let left = parseInt($("div#game-board").css('marginLeft')); // 67; div#game-board; margin-left
-        let col = Math.floor((event.clientX - left - event.offsetX) / 20);
-        let row = Math.floor((event.clientY - top - event.offsetY) / 20);
-        // console.log(["event", event, event.clientX, event.clientY, (event.clientX - left - event.offsetX), (event.clientY - top - event.offsetY), left, top, col, row])
+        //console.log(["event, ui:", event, ui, ui.helper, ui.helper[0].id, $("div#game-board")])
 
+        let top = ui.position.top; 
+        let left = ui.position.left; 
+        let row = Math.floor(top / 20);
+        let col = Math.floor(left / 20);
+        
+        //console.log(["droppable", event, event.clientX, event.clientY, (event.clientX - left - event.offsetX), (event.clientY - top - event.offsetY), left, top, col, row])
+
+        console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, col, row, `${event.offsetX}px`, `${event.clientY}px`, ui.helper[0].id, $(ui.helper[0].id)])
+        
         Socket.emit('placeGamePiece', 'xxx', {uuid: ui.helper[0].id, col, row})
       }
     });
@@ -171,5 +205,8 @@ li {
 }
 a {
   color: #42b983;
+}
+.user-id-set { 
+  background-color: red;
 }
 </style>
