@@ -63,7 +63,6 @@ export default {
   data () {
     return {
       msg: "Let's play Monopoly!", 
-      gameBoard: null, 
       index: {}, 
       userId: '', 
     }
@@ -78,7 +77,7 @@ export default {
     renderGameBoard: function(data){
       console.log(["data:", data])
 
-      if (_.has(data, "board")) {
+      if (_.has(data, "index")) {
         this.renderGameBoard(data);
       }
     }, 
@@ -110,17 +109,12 @@ export default {
         window.drawGamePiece(gp);
       });
     }, 
-    scrubGamePieces: function(ridx, cidx, cb){
-      let gpCollection = this.gameBoard[ridx][cidx];
-      gpCollection.forEach(gp => $(`#${gp.uuid}`).remove());
-      this.gameBoard[ridx][cidx] = [];
-      cb();
-    }, 
     renderGameBoard: function(data){
-      let userId, board, index, remove = null;
-      ({userId, board, index, remove} = data)
-
-      this.gameBoard = JSON.parse(JSON.stringify(board));
+      let userId, index, remove = null;
+      userId = data.userId;
+      index = data.index;
+      remove = data.remove;
+      // console.log(["userId, index, remove:", userId, index, remove]);
 
       // TODO: routinely look for orphaned game pieces in case the original event was missed
       (remove || []).forEach(gpId => {
@@ -129,7 +123,7 @@ export default {
       });
 
       let keys = Object.keys(index);
-      // console.log(["board, index:", board, index, keys, this.index])
+      // console.log(["index:", index, keys, this.index])
       keys.forEach ( gpid => { 
         // console.log(["this.index, gpid:", _.has(this.index, gpid), this.userId, userId, this.userId !== userId, (!_.has(this.index, gpid) || this.userId !== userId)]);
         let gp = index[gpid];
@@ -141,24 +135,6 @@ export default {
         }
       });
     }, 
-    xrenderGameBoard: function(board){
-      let isInitLoaded = false;
-      if (_.isNil(this.gameBoard)) {
-        this.gameBoard = JSON.parse(JSON.stringify(board));
-        isInitLoaded = true;
-      }
-
-      board.forEach((row, ridx) => {
-        row.forEach((col, cidx) => {
-          if (isInitLoaded || this.isDiff(col, this.gameBoard[ridx][cidx])) {
-            this.scrubGamePieces(ridx, cidx, () => {
-              this.gameBoard[ridx][cidx] = JSON.parse(JSON.stringify(col));
-              this.drawGamePieces(this.gameBoard[ridx][cidx]);
-            });
-          }
-        });
-      });
-    }
   }, 
   mounted() {
     const self = this;

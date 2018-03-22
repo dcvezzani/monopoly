@@ -2,18 +2,12 @@ const logger = require('morgan');
 const _ = require('lodash');
 const uuidV1 = require('uuid/v1');
 
-var createArray = (cnt) => {
-  return _.map(_.range(cnt), () => { return [] });
-}
-
-var game = {board: 
-  _.map(_.range(40), () => { return createArray(40) }), 
+var game = {
   index: {}, 
 }
 
 var initGameBoard = (cb) => {
-  // console.log(["initGameBoard", JSON.stringify(game.board)])
-  cb(game.board);
+  cb(game.index);
 }
 
 var placeGamePiece = (options={type: 'player', rotation: 0, col: 10, row: 10}, cb) => {
@@ -47,24 +41,21 @@ var placeGamePiece = (options={type: 'player', rotation: 0, col: 10, row: 10}, c
     }
   }
   
-  game.board[options.row][options.col].push (gp);
   game.index[uuid] = gp;
 
   if (!_.isNil(cb)) {
-    cb(game.board);
+    cb(game.index);
   }
 }
 
 var removeGamePiece = (options={uuid: null}, cb) => {
   let gp = game.index[options.uuid];
   if (!_.isNil(gp)) {
-    let gpCollection = game.board[gp.row][gp.col].filter(item => item.uuid != options.uuid);
-    game.board[gp.row][gp.col] = gpCollection;
     delete game.index[options.uuid];
   }
 
   if (!_.isNil(cb)) {
-    cb(game.board, gp);
+    cb(game.index, gp);
   }
 }
 
@@ -82,21 +73,21 @@ io.on('connection', function(socket){
   });
 
   socket.on('initGameBoard', function(userId){
-    initGameBoard((board) => {
+    initGameBoard((index) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board, index: game.index});
+      io.emit('renderGameBoard', {userId, index: game.index});
     })
   });
   socket.on('placeGamePiece', function(userId, gp){
-    placeGamePiece(gp, (board) => {
+    placeGamePiece(gp, (index) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board, index: game.index});
+      io.emit('renderGameBoard', {userId, index: game.index});
     })
   });
   socket.on('removeGamePiece', function(userId, gp){
-    removeGamePiece(gp, (board, gp) => {
+    removeGamePiece(gp, (index, gp) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board, index: game.index, remove: [gp.uuid]});
+      io.emit('renderGameBoard', {userId, index: game.index, remove: [gp.uuid]});
     })
   });
 
