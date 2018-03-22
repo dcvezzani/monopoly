@@ -10,7 +10,7 @@ var initGameBoard = (cb) => {
   cb(game.index);
 }
 
-var placeGamePiece = (options={type: 'player', rotation: 0, col: 10, row: 10}, cb) => {
+var placeGamePiece = (options={type: 'player', rotation: 0, left: 100, top: 100}, cb) => {
   let gp = null;
   let uuid = null;
   let isNew = false;
@@ -21,7 +21,7 @@ var placeGamePiece = (options={type: 'player', rotation: 0, col: 10, row: 10}, c
   if (_.has(options, "uuid")) {
     uuid = options.uuid;
     rotation = _.get(options, "rotation", game.index[uuid].rotation);
-    gp = {...(game.index[uuid]), col: options.col, row: options.row, rotation: rotation};
+    gp = {...(game.index[uuid]), left: options.left, top: options.top, rotation: rotation};
     type = gp.type;
 
     removeGamePiece({uuid});

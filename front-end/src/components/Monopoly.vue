@@ -28,7 +28,6 @@ window.drawGamePiece = (gp) => {
     scroll: false, 
     opacity: 0.7,
     stack: '#game-board div', 
-    grid: [ 20, 20 ], 
     start: function( event, ui ) {
       // const gp = ui.helper[0];
       // self.onPickupStart (ui.helper, gp.offsetLeft, gp.offsetTop);
@@ -36,19 +35,17 @@ window.drawGamePiece = (gp) => {
   });
   $("#game-board").append(gpDiv);
 
-  let top = $("div#game-board")[0].offsetTop
-  let left = parseInt($("div#game-board").css('marginLeft')); // 67; div#game-board; margin-left
+  // let top = $("div#game-board")[0].offsetTop
+  // let left = parseInt($("div#game-board").css('marginLeft')); // 67; div#game-board; margin-left
 
-  let x = (gp.col * 20);
-  let y = (gp.row * 20);
-
-  // console.log(["drawGamePiece:", x, y, left, top, gp.col, gp.row, `${x}px`, `${y}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
+  console.log(["drawGamePiece:", gp.left, gp.top, `${gp.left}px`, `${gp.top}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
 
   // $(`#${gp.uuid}`).animate({ top: `${y}px`, left: `${x}px`}, 400, 'swing', ()=>{
   //   $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
   // });
-  $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
   //$(`#${gp.uuid}`).fadeTo(300, 0.3, function() { $(this).fadeTo(500, 1.0); });
+
+  $(`#${gp.uuid}`).css({top: gp.top, left: gp.left, position:'absolute'});
   $(`#${gp.uuid}`).effect("pulsate", { times:3 }, 1000);
   $(`#${gp.uuid}`).removeClass("selected");
   
@@ -92,10 +89,10 @@ export default {
     }, 
     isDiff: function(collA, collB){
       let collASer = _.map(collA, (item) => {
-        return `${item.uuid}:${item.type}:${item.col}:${item.row}:`;
+        return `${item.uuid}:${item.type}:${item.col}:${item.top}:`;
       })
       let collBSer = _.map(collB, (item) => {
-        return `${item.uuid}:${item.type}:${item.col}:${item.row}:`;
+        return `${item.uuid}:${item.type}:${item.col}:${item.top}:`;
       })
 
       let delta = collASer.filter(item => {
@@ -145,17 +142,15 @@ export default {
       drop: function( event, ui ) {
         let top = ui.position.top; 
         let left = ui.position.left; 
-        let row = Math.floor(top / 20);
-        let col = Math.floor(left / 20);
 
-        // console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, col, row, `${event.offsetX}px`, `${event.clientY}px`, ui.helper[0].id, $(ui.helper[0].id)])
+        console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, `${event.offsetX}px`, `${event.clientY}px`, ui.helper[0].id, $(ui.helper[0].id)])
         
-        Socket.emit('placeGamePiece', 'xxx', {uuid: ui.helper[0].id, col, row})
+        Socket.emit('placeGamePiece', 'xxx', {uuid: ui.helper[0].id, left, top})
       }
     });
 
     $( document ).keypress(function(event) {
-      let gp, col, row, rotation, type = null;
+      let gp, left, top, rotation, type = null;
       switch(event.key) {
         case 'd':
           gp = $(".game-piece.selected")[0];
@@ -164,17 +159,17 @@ export default {
 
         case 'c':
           gp = $(".game-piece.selected")[0];
-          ({col, row, type, rotation} = self.index[gp.id]);
-          Socket.emit('placeGamePiece', 'xxx', {type, col, row, rotation});
+          ({left, top, type, rotation} = self.index[gp.id]);
+          Socket.emit('placeGamePiece', 'xxx', {type, left, top, rotation});
           break;
 
         case 'r':
           gp = $(".game-piece.selected")[0];
-          ({col, row} = self.index[gp.id]);
+          ({left, top} = self.index[gp.id]);
           rotation = (self.index[gp.id].rotation === 0) ? 90 : 0;
           // console.log(["self.index[gp.id].rotation:", self.index[gp.id].rotation, (self.index[gp.id].rotation === 0), rotation])
 
-          Socket.emit('placeGamePiece', 'xxx', {uuid: gp.id, col, row, rotation});
+          Socket.emit('placeGamePiece', 'xxx', {uuid: gp.id, left, top, rotation});
           break;
       }
     });
