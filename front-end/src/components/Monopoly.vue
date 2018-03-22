@@ -10,7 +10,20 @@
 const _ = require('lodash');
 
 window.drawGamePiece = (gp) => {
-  let gpDiv = $('<div id="' + gp.uuid + '" class="game-piece game-piece-' + gp.type + '" class="game-piece"></div>').draggable({ 
+  let gamePieceClass = `game-piece-${gp.type}`;
+  let rotation = _.get(gp, "rotation", 0);
+  let selected = _.get(gp, "selected", false);
+  let remove = _.get(gp, "remove", []);
+
+  if (rotation > 0) {
+    gamePieceClass = `${gamePieceClass} ${gamePieceClass}-${gp.rotation}`;
+  }
+  if (selected === true) {
+    gamePieceClass = `${gamePieceClass} selected`;
+  }
+
+  // let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClass}" class="game-piece"><div class="selected"></div></div>`).draggable({ 
+  let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClass}" class="game-piece"></div>`).draggable({ 
     containment: "#game-board", 
     scroll: false, 
     opacity: 0.7,
@@ -29,13 +42,20 @@ window.drawGamePiece = (gp) => {
   let x = (gp.col * 20);
   let y = (gp.row * 20);
 
-  console.log(["drawGamePiece:", x, y, left, top, gp.col, gp.row, `${x}px`, `${y}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
+  // console.log(["drawGamePiece:", x, y, left, top, gp.col, gp.row, `${x}px`, `${y}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
 
   // $(`#${gp.uuid}`).animate({ top: `${y}px`, left: `${x}px`}, 400, 'swing', ()=>{
   //   $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
   // });
   $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
+  //$(`#${gp.uuid}`).fadeTo(300, 0.3, function() { $(this).fadeTo(500, 1.0); });
+  $(`#${gp.uuid}`).effect("pulsate", { times:3 }, 1000);
+  $(`#${gp.uuid}`).removeClass("selected");
   
+  $(`#${gp.uuid}`).click((event, ui) => {
+    // console.log(["event, ui:", event, ui]);
+    $(event.target).addClass("selected");
+  });
 };
 
 export default {
@@ -56,10 +76,10 @@ export default {
       console.log('this method was fired by the socket server. eg: io.emit("customEmit", data)')
     }, 
     renderGameBoard: function(data){
-      //console.log(["data:", data])
+      console.log(["data:", data])
 
       if (_.has(data, "board")) {
-        this.renderGameBoard(data.userId, data.board, data.index);
+        this.renderGameBoard(data);
       }
     }, 
   },
@@ -96,8 +116,17 @@ export default {
       this.gameBoard[ridx][cidx] = [];
       cb();
     }, 
-    renderGameBoard: function(userId, board, index){
+    renderGameBoard: function(data){
+      let userId, board, index, remove = null;
+      ({userId, board, index, remove} = data)
+
       this.gameBoard = JSON.parse(JSON.stringify(board));
+
+      // TODO: routinely look for orphaned game pieces in case the original event was missed
+      (remove || []).forEach(gpId => {
+        // console.log(["remove:", `#${gpId}`])
+        $(`#${gpId}`).remove();
+      });
 
       let keys = Object.keys(index);
       // console.log(["board, index:", board, index, keys, this.index])
@@ -105,7 +134,7 @@ export default {
         // console.log(["this.index, gpid:", _.has(this.index, gpid), this.userId, userId, this.userId !== userId, (!_.has(this.index, gpid) || this.userId !== userId)]);
         let gp = index[gpid];
         if (!_.has(this.index, gpid) || this.userId !== userId) {
-          console.log(['move initiated from server']);
+          // console.log(['move initiated from server']);
           $(`#${gpid}`).remove();
           this.drawGamePieces([gp]);
           this.index[gpid] = gp;
@@ -132,37 +161,48 @@ export default {
     }
   }, 
   mounted() {
+    const self = this;
+
     window.Socket = this.$socket;
 
-    // $( ".game-piece" ).draggable({ 
-    //   containment: "#game-board", 
-    //   scroll: false, 
-    //   opacity: 0.7,
-    //   stack: '#game-board div', 
-    //   grid: [ 20, 20 ], 
-    //   start: function( event, ui ) {
-    //     // const gp = ui.helper[0];
-    //     // self.onPickupStart (ui.helper, gp.offsetLeft, gp.offsetTop);
-    //   }
-    // });
-  
     $( "#game-board" ).droppable({
       drop: function( event, ui ) {
-        //console.log(["event, ui:", event, ui, ui.helper, ui.helper[0].id, $("div#game-board")])
-
         let top = ui.position.top; 
         let left = ui.position.left; 
         let row = Math.floor(top / 20);
         let col = Math.floor(left / 20);
-        
-        //console.log(["droppable", event, event.clientX, event.clientY, (event.clientX - left - event.offsetX), (event.clientY - top - event.offsetY), left, top, col, row])
 
-        console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, col, row, `${event.offsetX}px`, `${event.clientY}px`, ui.helper[0].id, $(ui.helper[0].id)])
+        // console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, col, row, `${event.offsetX}px`, `${event.clientY}px`, ui.helper[0].id, $(ui.helper[0].id)])
         
         Socket.emit('placeGamePiece', 'xxx', {uuid: ui.helper[0].id, col, row})
       }
     });
 
+    $( document ).keypress(function(event) {
+      let gp, col, row, rotation, type = null;
+      switch(event.key) {
+        case 'd':
+          gp = $(".game-piece.selected")[0];
+          Socket.emit('removeGamePiece', 'xxx', {uuid: gp.id});
+          break;
+
+        case 'c':
+          gp = $(".game-piece.selected")[0];
+          ({col, row, type, rotation} = self.index[gp.id]);
+          Socket.emit('placeGamePiece', 'xxx', {type, col, row, rotation});
+          break;
+
+        case 'r':
+          gp = $(".game-piece.selected")[0];
+          ({col, row} = self.index[gp.id]);
+          rotation = (self.index[gp.id].rotation === 0) ? 90 : 0;
+          // console.log(["self.index[gp.id].rotation:", self.index[gp.id].rotation, (self.index[gp.id].rotation === 0), rotation])
+
+          Socket.emit('placeGamePiece', 'xxx', {uuid: gp.id, col, row, rotation});
+          break;
+      }
+    });
+    
     Socket.emit('initGameBoard', 'xxx')
 
   }, 
@@ -176,7 +216,40 @@ export default {
   background-color: black;
   width: 20px;
   height: 20px;
+  position: relative;
 }
+
+.game-piece-player {
+  background-color: gray;
+}
+.game-piece-house {
+  background-color: green;
+}
+.game-piece-hotel {
+  border: 2px solid black;
+  background-color: red;
+  width: 40px;
+}
+.game-piece-hotel-90 {
+  width: 20px;
+  height: 40px;
+}
+
+
+.xgame-piece-hotel-90 .selected {
+  width: 30px;
+  height: 50px;
+  position: relative;
+  left: -5px;
+  top: -5px;
+}
+.xselected {
+  box-shadow: 0 0px 36px 0 rgba(239,211,105, 1), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+.selected {
+  border: 3px solid rgba(239,211,105, 1);
+}
+
 </style>
 
 <style scoped>

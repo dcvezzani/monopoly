@@ -16,15 +16,18 @@ var initGameBoard = (cb) => {
   cb(game.board);
 }
 
-var placeGamePiece = (options={type: 'player', col: 10, row: 10}, cb) => {
+var placeGamePiece = (options={type: 'player', rotation: 0, col: 10, row: 10}, cb) => {
   let gp = null;
   let uuid = null;
   let isNew = false;
   let type = _.get(options, "type", "player");
+  let rotation = _.get(options, "rotation", 0);
+  console.log(["options:", options])
 
   if (_.has(options, "uuid")) {
     uuid = options.uuid;
-    gp = {...(game.index[uuid]), col: options.col, row: options.row};
+    rotation = _.get(options, "rotation", game.index[uuid].rotation);
+    gp = {...(game.index[uuid]), col: options.col, row: options.row, rotation: rotation};
     type = gp.type;
 
     removeGamePiece({uuid});
@@ -35,7 +38,11 @@ var placeGamePiece = (options={type: 'player', col: 10, row: 10}, cb) => {
 
     switch(options.type) {
       case 'player':
-        gp = {...options, type: 'player', uuid, isNew};
+      case 'house':
+        gp = {...options, uuid, isNew};
+        break;
+      case 'hotel':
+        gp = {...options, type: 'hotel', uuid, isNew};
         break;
     }
   }
@@ -57,7 +64,7 @@ var removeGamePiece = (options={uuid: null}, cb) => {
   }
 
   if (!_.isNil(cb)) {
-    cb(game.board);
+    cb(game.board, gp);
   }
 }
 
@@ -87,9 +94,9 @@ io.on('connection', function(socket){
     })
   });
   socket.on('removeGamePiece', function(userId, gp){
-    removeGamePiece(gp, (board) => {
+    removeGamePiece(gp, (board, gp) => {
       console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, board, index: game.index});
+      io.emit('renderGameBoard', {userId, board, index: game.index, remove: [gp.uuid]});
     })
   });
 
