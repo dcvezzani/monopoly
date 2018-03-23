@@ -64,6 +64,14 @@ var server = require('http').createServer();
 var io  = require('socket.io')(server, { path: '/monopoly/socket.io'}).listen(8085);
 // var io = require('socket.io').listen(8085);
 
+io.origins((origin, callback) => {
+  // if (origin !== 'https://foo.example.com') {
+  //   return callback('origin not allowed', false);
+  // }
+  console.log(['origins, cors', origin])
+  callback(null, true);
+});
+
 // var io = require('socket.io')(server);
 // server.listen(process.env.PORT || 3000);
 
