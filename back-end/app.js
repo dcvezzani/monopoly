@@ -1,3 +1,4 @@
+const http = require('http');
 const logger = require('morgan');
 const _ = require('lodash');
 const uuidV1 = require('uuid/v1');
@@ -59,12 +60,31 @@ var removeGamePiece = (options={uuid: null}, cb) => {
   }
 }
 
-var io = require('socket.io').listen(8085);
+var server = require('http').createServer();
+var io  = require('socket.io')(server, { path: '/monopoly/socket.io'}).listen(8085);
+// var io = require('socket.io').listen(8085);
+
+// var io = require('socket.io')(server);
+// server.listen(process.env.PORT || 3000);
+
+
+// io
+// .of('/my-namespace')
+// .on('connection', function(socket){
+//     console.log('a user connected with id %s', socket.id);
+// 
+//     socket.on('my-message', function (data) {
+//         io.of('my-namespace').emit('my-message', data);
+//         // or socket.emit(...)
+//         console.log('broadcasting my-message', data);
+//     });
+// });
 
 //turn off debug
 // io.set('log level', 1);
 
-io.on('connection', function(socket){
+io
+.on('connection', function(socket){
   console.log('a user connected');
   socket.emit('connect');
 
