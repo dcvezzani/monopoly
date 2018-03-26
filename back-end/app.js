@@ -39,6 +39,9 @@ var placeGamePiece = (options={type: 'player', rotation: 0, left: 100, top: 100}
       case 'hotel':
         gp = {...options, type: 'hotel', uuid, isNew};
         break;
+			default: 
+        gp = {...options, uuid, isNew};
+        break;
     }
   }
   

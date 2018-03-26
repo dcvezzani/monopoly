@@ -14,16 +14,19 @@ window.drawGamePiece = (gp) => {
   let rotation = _.get(gp, "rotation", 0);
   let selected = _.get(gp, "selected", false);
   let remove = _.get(gp, "remove", []);
+	let gamePieceClasses = [gamePieceClass];
 
   if (rotation > 0) {
-    gamePieceClass = `${gamePieceClass} ${gamePieceClass}-${gp.rotation}`;
+		gamePieceClasses.push (`${gamePieceClass}-${gp.rotation}`);
   }
   if (selected === true) {
-    gamePieceClass = `${gamePieceClass} selected`;
+		gamePieceClasses.push (`selected`);
+  }
+  if (gamePieceClass.match(/player-token/) !== null) {
+		gamePieceClasses.unshift (`game-piece-player-token`);
   }
 
-  // let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClass}" class="game-piece"><div class="selected"></div></div>`).draggable({ 
-  let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClass}" class="game-piece"></div>`).draggable({ 
+  let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClasses.join(' ')}"></div>`).draggable({ 
     containment: "#game-board", 
     scroll: false, 
     opacity: 0.7,
@@ -46,7 +49,7 @@ window.drawGamePiece = (gp) => {
   //$(`#${gp.uuid}`).fadeTo(300, 0.3, function() { $(this).fadeTo(500, 1.0); });
 
   $(`#${gp.uuid}`).css({top: gp.top, left: gp.left, position:'absolute'});
-  $(`#${gp.uuid}`).effect("pulsate", { times:3 }, 1000);
+  // $(`#${gp.uuid}`).effect("pulsate", { times:3 }, 1000);
   $(`#${gp.uuid}`).removeClass("selected");
   
   $(`#${gp.uuid}`).click((event, ui) => {
@@ -188,6 +191,7 @@ export default {
   width: 20px;
   height: 20px;
   position: relative;
+  border: 2px solid black;
 }
 
 .game-piece-player {
@@ -197,7 +201,6 @@ export default {
   background-color: green;
 }
 .game-piece-hotel {
-  border: 2px solid black;
   background-color: red;
   width: 40px;
 }
@@ -221,6 +224,57 @@ export default {
   border: 3px solid rgba(239,211,105, 1);
 }
 
+.monopoly-player-piece {
+	display: block;
+	width: 40px;
+	height: 40px;
+}
+
+.game-piece-player-token {
+    width: 41px;
+    height: 41px;
+    background-image: url("../assets/monopoly-player-pieces.png");
+    background-size: auto 49px;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    border: 0;
+}
+
+.game-piece-player-token-iron {
+    background-position: -3px -4px;
+}
+
+.game-piece-player-token-shoe {
+    background-position: -46px -4px;
+}
+
+.game-piece-player-token-ship {
+    background-position: -88px -4px;
+}
+
+.game-piece-player-token-hat {
+    background-position: -130px -4px;
+}
+
+.game-piece-player-token-dog {
+    background-position: -172px -4px;
+}
+
+.game-piece-player-token-car {
+    background-position: -214px -4px;
+}
+
+.game-piece-player-token-thimble {
+    background-position: -256px -4px;
+}
+
+.game-piece-player-token-wheel-barrow {
+    background-position: -298px -4px;
+}
+
+.monopoly-player-piece-iron {
+	background-image: url("../assets/monopoly-player-pieces.png");
+}
 </style>
 
 <style scoped>

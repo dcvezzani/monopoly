@@ -14,7 +14,8 @@ import './assets/sass/main.scss'
 
 import VueSocketio from 'vue-socket.io';
 // Vue.use(VueSocketio, 'http://games.reliacode.com:8085');
-Vue.use(VueSocketio, io('http://games.reliacode.com:8085', { path: '/monopoly/socket.io'}));
+// Vue.use(VueSocketio, io('http://games.reliacode.com:8085', { path: '/monopoly/socket.io'}));
+ Vue.use(VueSocketio, io('http://127.0.0.1:8085', { path: '/monopoly/socket.io'}));
 
 Vue.config.productionTip = false
 
