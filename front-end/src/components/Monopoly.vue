@@ -1,6 +1,7 @@
 <template>
   <div class="monopoly">
     <input @blur="setUserId" ref="userId" type="text" :class="[(userId.length > 0) ? 'user-id-set' : 'user-id-unset']" />
+    <button @click="rollDice">{{diceValues.join(', ')}}</button>
     <div id="game-board">
     </div>
   </div>
@@ -8,6 +9,7 @@
 
 <script>
 const _ = require('lodash');
+const d = require('dice-bag')
 
 window.drawGamePiece = (gp) => {
   let gamePieceClass = `game-piece-${gp.type}`;
@@ -65,6 +67,7 @@ export default {
       msg: "Let's play Monopoly!", 
       index: {}, 
       userId: '', 
+			diceValues: ["Roll Dice"],
     }
   }, 
   sockets:{
@@ -73,6 +76,10 @@ export default {
     },
     customEmit: function(val){
       console.log('this method was fired by the socket server. eg: io.emit("customEmit", data)')
+    }, 
+    rollDice: function(data){
+			console.log(['socket:r:rollDice', data]);
+			this.diceValues = data.values;
     }, 
     renderGameBoard: function(data){
       console.log(["data:", data])
@@ -83,6 +90,22 @@ export default {
     }, 
   },
   methods: {
+		rollDice: function() {
+      Socket.emit('rollDice', 'xxx')
+
+			// let speedDie = d(1,6);
+
+			// switch(speedDie) {
+			// 	case 4:
+			// 	case 5:
+			// 		speedDie = "Mr. Monopoly"
+			// 		break;
+			// 	case 6:
+			// 		speedDie = "Bus"
+			// 		break;
+			// }
+			// this.diceValues = [d(1,6), d(1,6), speedDie];
+		},
     setUserId: function(){
       // console.log(['this.$refs.userId', this.$refs.userId.value]);
       this.userId = this.$refs.userId.value;
@@ -231,8 +254,8 @@ export default {
 }
 
 .game-piece-player-token {
-    width: 41px;
-    height: 41px;
+    width: 40px;
+    height: 40px;
     background-image: url("../assets/monopoly-player-pieces.png");
     background-size: auto 49px;
     background-repeat: no-repeat;
@@ -241,11 +264,11 @@ export default {
 }
 
 .game-piece-player-token-iron {
-    background-position: -3px -4px;
+    background-position: -5px -4px;
 }
 
 .game-piece-player-token-shoe {
-    background-position: -46px -4px;
+    background-position: -45px -4px;
 }
 
 .game-piece-player-token-ship {
@@ -253,23 +276,23 @@ export default {
 }
 
 .game-piece-player-token-hat {
-    background-position: -130px -4px;
+    background-position: -128px -4px;
 }
 
 .game-piece-player-token-dog {
-    background-position: -172px -4px;
+    background-position: -168px -4px;
 }
 
 .game-piece-player-token-car {
-    background-position: -214px -4px;
+    background-position: -208px -4px;
 }
 
 .game-piece-player-token-thimble {
-    background-position: -256px -4px;
+    background-position: -248px -4px;
 }
 
 .game-piece-player-token-wheel-barrow {
-    background-position: -298px -4px;
+    background-position: -288px -4px;
 }
 
 .monopoly-player-piece-iron {

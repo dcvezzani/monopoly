@@ -2,9 +2,11 @@ const http = require('http');
 const logger = require('morgan');
 const _ = require('lodash');
 const uuidV1 = require('uuid/v1');
+const diceBag = require('dice-bag')
 
 var game = {
   index: {}, 
+	diceValues: [],
 }
 
 var initGameBoard = (cb) => {
@@ -63,6 +65,25 @@ var removeGamePiece = (options={uuid: null}, cb) => {
   }
 }
 
+var rollDice = (cb) => {
+	let speedDie = diceBag(1,6);
+
+	switch(speedDie) {
+		case 4:
+		case 5:
+			speedDie = "Mr. Monopoly"
+			break;
+		case 6:
+			speedDie = "Bus"
+			break;
+	}
+	game.diceValues = [diceBag(1,6), diceBag(1,6), speedDie];
+
+  if (!_.isNil(cb)) {
+    cb(game.diceValues);
+  }
+}
+
 var server = require('http').createServer();
 var io  = require('socket.io')(server, { path: '/monopoly/socket.io'}).listen(8085);
 // var io = require('socket.io').listen(8085);
@@ -107,6 +128,7 @@ io
     initGameBoard((index) => {
       console.log(["game.index:", game.index])
       io.emit('renderGameBoard', {userId, index: game.index});
+      io.emit('rollDice', {userId, values: game.diceValues});
     })
   });
   socket.on('placeGamePiece', function(userId, gp){
@@ -119,6 +141,12 @@ io
     removeGamePiece(gp, (index, gp) => {
       console.log(["game.index:", game.index])
       io.emit('renderGameBoard', {userId, index: game.index, remove: [gp.uuid]});
+    })
+  });
+  socket.on('rollDice', function(userId){
+    rollDice((values) => {
+      console.log(["rollDice:", userId, game.diceValues])
+      io.emit('rollDice', {userId, values: game.diceValues});
     })
   });
 

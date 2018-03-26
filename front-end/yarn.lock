@@ -1838,6 +1838,10 @@ detect-node@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/detect-node/-/detect-node-2.0.3.tgz#a2033c09cc8e158d37748fbde7507832bd6ce127"
 
+"dice-bag@git+ssh://git@github.com/alice-em/dice.git":
+  version "0.1.2"
+  resolved "git+ssh://git@github.com/alice-em/dice.git#d1affefd3175a9f77fe4d612a75cf8d64b50beff"
+
 diffie-hellman@^5.0.0:
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/diffie-hellman/-/diffie-hellman-5.0.2.tgz#b5835739270cfe26acf632099fded2a07f209e5e"
