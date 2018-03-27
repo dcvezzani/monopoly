@@ -8,7 +8,7 @@
   "dependencies": {
     "babel-register": "^6.26.0",
     "debug": "~2.6.9",
-    "dice-bag": "git+ssh://git@github.com/alice-em/dice.git",
+    "dice-bag": "git+https://git@github.com/alice-em/dice.git",
     "lodash": "^4.17.5",
     "morgan": "~1.9.0",
     "socket.io": "^2.0.4",

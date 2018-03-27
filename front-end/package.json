@@ -10,7 +10,7 @@
     "build": "node build/build.js"
   },
   "dependencies": {
-    "dice-bag": "git+ssh://git@github.com/alice-em/dice.git",
+    "dice-bag": "git+https://git@github.com/alice-em/dice.git",
     "jquery": "^3.3.1",
     "jquery-ui-dist": "^1.12.1",
     "lodash": "^4.17.5",
