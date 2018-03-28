@@ -9,7 +9,7 @@
 
 <script>
 const _ = require('lodash');
-const d = require('dice-bag')
+const d = require('dice-bag');
 
 window.drawGamePiece = (gp) => {
   let gamePieceClass = `game-piece-${gp.type}`;
@@ -79,7 +79,10 @@ export default {
     }, 
     rollDice: function(data){
 			console.log(['socket:r:rollDice', data]);
-			this.diceValues = data.values;
+			this.diceValues = (data.values.length > 0) ? data.values : ["Roll Dice"];
+    }, 
+    deckCardCounts: function(data){
+			console.log(['socket:r:deckCardCounts', data]);
     }, 
     renderGameBoard: function(data){
       console.log(["data:", data])

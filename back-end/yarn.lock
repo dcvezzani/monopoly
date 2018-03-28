@@ -877,9 +877,9 @@ detect-libc@^1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-1.0.3.tgz#fa137c4bd698edf55cd5cd02ac559f91a4c4ba9b"
 
-"dice-bag@git+ssh://git@github.com/alice-em/dice.git":
+"dice-bag@git+https://git@github.com/alice-em/dice.git":
   version "0.1.2"
-  resolved "git+ssh://git@github.com/alice-em/dice.git#d1affefd3175a9f77fe4d612a75cf8d64b50beff"
+  resolved "git+https://git@github.com/alice-em/dice.git#d1affefd3175a9f77fe4d612a75cf8d64b50beff"
 
 ecc-jsbn@~0.1.1:
   version "0.1.1"

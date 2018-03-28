@@ -3,17 +3,59 @@ const logger = require('morgan');
 const _ = require('lodash');
 const uuidV1 = require('uuid/v1');
 const diceBag = require('dice-bag')
+const Deck = require('./deck')
 
-var game = {
+const chanceCards = [
+  {type: 'chance', body: 'Advance to Go (Collect $200)'}, 
+  {type: 'chance', body: 'Advance to Illinois Ave—If you pass Go, collect $200'}, 
+  {type: 'chance', body: 'Advance to St. Charles Place – If you pass Go, collect $200'}, 
+  {type: 'chance', body: 'Advance token to nearest Utility. If unowned, you may buy it from the Bank. If owned, throw dice and pay owner a total ten times the amount thrown.'}, 
+  {type: 'chance', body: 'Advance token to the nearest Railroad and pay owner twice the rental to which he/she {he} is otherwise entitled. If Railroad is unowned, you may buy it from the Bank.'}, 
+  {type: 'chance', body: 'Bank pays you dividend of $50'}, 
+  {type: 'chance', body: 'Get Out of Jail Free'}, 
+  {type: 'chance', body: 'Go Back 3 Spaces'}, 
+  {type: 'chance', body: 'Go to Jail–Go directly to Jail–Do not pass Go, do not collect $200'}, 
+  {type: 'chance', body: 'Make general repairs on all your property–For each house pay $25–For each hotel $100'}, 
+  {type: 'chance', body: 'Pay poor tax of $15'}, 
+  {type: 'chance', body: 'Take a trip to Reading Railroad–If you pass Go, collect $200'}, 
+  {type: 'chance', body: 'Take a walk on the Boardwalk–Advance token to Boardwalk'}, 
+  {type: 'chance', body: 'You have been elected Chairman of the Board–Pay each player $50'}, 
+  {type: 'chance', body: 'Your building and loan matures—Collect $150'}, 
+  {type: 'chance', body: 'You have won a crossword competition—Collect $100'}, 
+];
+
+const communityChestCards = [
+  {type: 'community chest', body: 'Advance to Go (Collect $200)'},
+  {type: 'community chest', body: 'Bank error in your favor—Collect $200'},
+  {type: 'community chest', body: "Doctor's fee—Pay $50"},
+  {type: 'community chest', body: 'From sale of stock you get $50'},
+  {type: 'community chest', body: 'Get Out of Jail Free'},
+  {type: 'community chest', body: 'Go to Jail–Go directly to jail–Do not pass Go–Do not collect $200'},
+  {type: 'community chest', body: 'Grand Opera Night—Collect $50 from every player for opening night seats'},
+  {type: 'community chest', body: 'Holiday Fund matures—Receive $100'},
+  {type: 'community chest', body: 'Income tax refund–Collect $20'},
+  {type: 'community chest', body: 'It is your birthday—Collect $10'},
+  {type: 'community chest', body: 'Life insurance matures–Collect $100'},
+  {type: 'community chest', body: 'Pay hospital fees of $100'},
+  {type: 'community chest', body: 'Pay school fees of $150'},
+  {type: 'community chest', body: 'Receive $25 consultancy fee'},
+  {type: 'community chest', body: 'You are assessed for street repairs–$40 per house–$115 per hotel'},
+  {type: 'community chest', body: 'You have won second prize in a beauty contest–Collect $10'},
+  {type: 'community chest', body: 'You inherit $100'},
+];
+
+let game = {
   index: {}, 
 	diceValues: [],
+	cardDecks: [],
 }
 
-var initGameBoard = (cb) => {
+let initGameBoard = (cb) => {
+  initDecks();
   cb(game.index);
 }
 
-var placeGamePiece = (options={type: 'player', rotation: 0, left: 100, top: 100}, cb) => {
+let placeGamePiece = (options={type: 'player', rotation: 0, left: 100, top: 100}, cb) => {
   let gp = null;
   let uuid = null;
   let isNew = false;
@@ -54,7 +96,7 @@ var placeGamePiece = (options={type: 'player', rotation: 0, left: 100, top: 100}
   }
 }
 
-var removeGamePiece = (options={uuid: null}, cb) => {
+let removeGamePiece = (options={uuid: null}, cb) => {
   let gp = game.index[options.uuid];
   if (!_.isNil(gp)) {
     delete game.index[options.uuid];
@@ -65,7 +107,7 @@ var removeGamePiece = (options={uuid: null}, cb) => {
   }
 }
 
-var rollDice = (cb) => {
+let rollDice = (cb) => {
 	let speedDie = diceBag(1,6);
 
 	switch(speedDie) {
@@ -84,9 +126,36 @@ var rollDice = (cb) => {
   }
 }
 
-var server = require('http').createServer();
-var io  = require('socket.io')(server, { path: '/monopoly/socket.io'}).listen(8085);
-// var io = require('socket.io').listen(8085);
+let initDecks = (cb) => {
+  let chance = new Deck(chanceCards);
+  let communityChest = new Deck(communityChestCards);
+  game.cardDecks = {chance, communityChest};
+  // console.log(["game.cardDecks:", game.cardDecks])
+
+  if (!_.isNil(cb)) {
+    cb(game.cardDecks);
+  }
+}
+
+let shuffleDeck = (type) => {
+
+}
+
+let cardCounts = (decks) => {
+  return _.map(decks, deck => { 
+    // console.log(["deck:", JSON.stringify(deck), deck.deck[0]])
+    let type = deck.deck[0].type;
+    let count = deck.deck.length;
+    // console.log(["{type, count}:", {type, count}])
+    return {type, count};
+  })
+}
+
+
+
+let server = require('http').createServer();
+let io  = require('socket.io')(server, { path: '/monopoly/socket.io'}).listen(8085);
+// let io = require('socket.io').listen(8085);
 
 io.origins((origin, callback) => {
   // if (origin !== 'https://foo.example.com') {
@@ -96,7 +165,7 @@ io.origins((origin, callback) => {
   callback(null, true);
 });
 
-// var io = require('socket.io')(server);
+// let io = require('socket.io')(server);
 // server.listen(process.env.PORT || 3000);
 
 
@@ -126,9 +195,12 @@ io
 
   socket.on('initGameBoard', function(userId){
     initGameBoard((index) => {
-      console.log(["game.index:", game.index])
-      io.emit('renderGameBoard', {userId, index: game.index});
-      io.emit('rollDice', {userId, values: game.diceValues});
+      initDecks((decks) => {
+        console.log(["game.index, decks:", game.index, cardCounts(game.cardDecks)])
+        io.emit('renderGameBoard', {userId, index: game.index});
+        io.emit('rollDice', {userId, values: game.diceValues});
+        io.emit('deckCardCounts', {userId, values: cardCounts(game.cardDecks)});
+      })
     })
   });
   socket.on('placeGamePiece', function(userId, gp){
@@ -147,6 +219,12 @@ io
     rollDice((values) => {
       console.log(["rollDice:", userId, game.diceValues])
       io.emit('rollDice', {userId, values: game.diceValues});
+    })
+  });
+  socket.on('shuffleDeck', function(userId, deckType){
+    shuffleDeck(() => {
+      console.log(["shuffleDeck:", userId, deckType])
+      io.emit('shuffleDeck', {userId, deckType});
     })
   });
 
