@@ -47,7 +47,18 @@ const communityChestCards = [
 let game = {
   index: {}, 
 	diceValues: [],
-	cardDecks: [],
+	cardDecks: {
+    communityChest: [], 
+    chance: [], 
+  },
+  players: {
+    'xxx': {
+      cardDecks: {
+        communityChest: [], 
+        chance: [], 
+      }
+    }
+  }
 }
 
 let initGameBoard = (cb) => {
@@ -113,10 +124,10 @@ let rollDice = (cb) => {
 	switch(speedDie) {
 		case 4:
 		case 5:
-			speedDie = "Mr. Monopoly"
+			speedDie = `${speedDie} (Mr. Monopoly)`
 			break;
 		case 6:
-			speedDie = "Bus"
+			speedDie = `${speedDie} (Bus)`
 			break;
 	}
 	game.diceValues = [diceBag(1,6), diceBag(1,6), speedDie];
@@ -126,19 +137,27 @@ let rollDice = (cb) => {
   }
 }
 
+let deepCopy = (obj) => {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 let initDecks = (cb) => {
-  let chance = new Deck(chanceCards);
-  let communityChest = new Deck(communityChestCards);
+  let chance = new Deck(deepCopy(chanceCards));
+  let communityChest = new Deck(deepCopy(communityChestCards));
   game.cardDecks = {chance, communityChest};
-  // console.log(["game.cardDecks:", game.cardDecks])
+  // console.log(["initDecks:game.cardDecks", cardCounts(game.cardDecks)])
 
   if (!_.isNil(cb)) {
     cb(game.cardDecks);
   }
 }
 
-let shuffleDeck = (type) => {
-
+let shuffleDeck = (type=null) => {
+  if (type === null) {
+  }
+    let decks = Object.keys(game.cardDecks);
+  console.log(["shuffleDeck:", type, decks])
+    decks.forEach(deckType => game.cardDecks[deckType].shuffle());
 }
 
 let cardCounts = (decks) => {
@@ -149,6 +168,15 @@ let cardCounts = (decks) => {
     // console.log(["{type, count}:", {type, count}])
     return {type, count};
   })
+}
+
+let drawCard = (type, cb) => {
+  let card = game.cardDecks[type] && game.cardDecks[type].deal();
+  // console.log(["drawCard:", JSON.stringify(card)]);
+
+  if (!_.isNil(cb)) {
+    cb(card);
+  }
 }
 
 
@@ -195,12 +223,10 @@ io
 
   socket.on('initGameBoard', function(userId){
     initGameBoard((index) => {
-      initDecks((decks) => {
-        console.log(["game.index, decks:", game.index, cardCounts(game.cardDecks)])
-        io.emit('renderGameBoard', {userId, index: game.index});
-        io.emit('rollDice', {userId, values: game.diceValues});
-        io.emit('deckCardCounts', {userId, values: cardCounts(game.cardDecks)});
-      })
+      console.log(["game.index, decks:", game.index, cardCounts(game.cardDecks)])
+      io.emit('renderGameBoard', {userId, index: game.index});
+      io.emit('rollDice', {userId, values: game.diceValues});
+      io.emit('deckCardCounts', {userId, values: cardCounts(game.cardDecks)});
     })
   });
   socket.on('placeGamePiece', function(userId, gp){
@@ -221,10 +247,25 @@ io
       io.emit('rollDice', {userId, values: game.diceValues});
     })
   });
+  socket.on('initDeck', function(userId, deckType){
+    initDecks(() => {
+      console.log(["initDeck:", userId, deckType])
+      io.emit('initDeck', {userId, deckType});
+      io.emit('deckCardCounts', {userId, values: cardCounts(game.cardDecks)});
+    })
+  });
   socket.on('shuffleDeck', function(userId, deckType){
-    shuffleDeck(() => {
+    shuffleDeck(deckType, () => {
       console.log(["shuffleDeck:", userId, deckType])
       io.emit('shuffleDeck', {userId, deckType});
+    })
+  });
+  socket.on('drawCard', function(userId, data){
+    // console.log(["drawCard:", userId, data, data.type])
+    drawCard(data.type, (card) => {
+      console.log(["drawCard:", userId, data, card])
+      io.emit('drawCard', {userId, data, card});
+      io.emit('deckCardCounts', {userId, values: cardCounts(game.cardDecks)});
     })
   });
 

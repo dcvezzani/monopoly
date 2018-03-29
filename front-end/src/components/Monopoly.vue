@@ -1,8 +1,37 @@
 <template>
   <div class="monopoly">
-    <input @blur="setUserId" ref="userId" type="text" :class="[(userId.length > 0) ? 'user-id-set' : 'user-id-unset']" />
-    <button @click="rollDice">{{diceValues.join(', ')}}</button>
-    <div id="game-board">
+    <div id="game-table">
+      <div id="game-board">
+      </div>
+      <div class="gutter">
+        <div class="player-name">
+          <input @blur="setUserId" ref="userId" type="text" :class="[(userId.length > 0) ? 'user-id-set' : 'user-id-unset']" />
+        </div>
+
+        <div class="dice-bag">
+          <button @click="rollDice">{{diceValues.join(', ')}}</button>
+        </div>
+
+        <div class="game-pieces">
+          <div @click="addGamePiece" class="game-piece game-piece-player-token game-piece-player-token-dog "></div>
+          <div @click="addGamePiece" class="game-piece game-piece-player-token game-piece-player-token-thimble "></div>
+          <div @click="addGamePiece" class="game-piece game-piece-player-token game-piece-player-token-ship "></div>
+          <div @click="addGamePiece" class="game-piece game-piece-player-token game-piece-player-token-shoe "></div>
+          <div @click="addGamePiece" class="game-piece game-piece-hotel "></div>
+          <div @click="addGamePiece" class="game-piece game-piece-house "></div>
+        </div>
+
+        <div class="deck-chance">
+          <button @click="initCards">Init Decks</button>
+          <button @click="shuffleCards">Shuffle Decks</button>
+          <button @click="drawChanceCard">Draw Chance Card</button>
+          <ul>
+            <li>chance cards</li>
+            <li v-for="card in chanceCards">{{ card.body }}</li>
+          </ul>
+        </div>
+
+      </div>
     </div>
   </div>
 </template>
@@ -68,6 +97,7 @@ export default {
       index: {}, 
       userId: '', 
 			diceValues: ["Roll Dice"],
+      chanceCards: [], 
     }
   }, 
   sockets:{
@@ -84,6 +114,17 @@ export default {
     deckCardCounts: function(data){
 			console.log(['socket:r:deckCardCounts', data]);
     }, 
+    initDeck: function(data){
+			console.log(['socket:r:initDeck', data]);
+      this.chanceCards = [];
+    }, 
+    shuffleDeck: function(data){
+			console.log(['socket:r:shuffleDeck', data]);
+    }, 
+    drawCard: function(data){
+			console.log(['socket:r:drawCard', data]);
+      this.chanceCards.push (data.card[0][0]);
+    }, 
     renderGameBoard: function(data){
       console.log(["data:", data])
 
@@ -93,21 +134,35 @@ export default {
     }, 
   },
   methods: {
+    initCards: function(event){
+      console.log(['initCards', event]);
+      Socket.emit('initDeck', 'xxx', {type: 'chance'})
+    },
+    shuffleCards: function(event){
+      console.log(['shuffleCards', event]);
+      Socket.emit('shuffleDeck', 'xxx', {type: 'chance'})
+    },
+    drawChanceCard: function(event){
+      console.log(['drawChanceCard', event]);
+      Socket.emit('drawCard', 'xxx', {type: 'chance'})
+    },
+    addGamePiece: function(event, ui) {
+      // console.log(['addGamePiece:event', event]);
+      let gpType = null;
+      let isPlayerToken = event.target.className.match(/game-piece-(player-token-[^ ]+)/);
+      let isGamePiece = event.target.className.match(/game-piece-([^ ]+)/);
+
+      if (isPlayerToken !== null) {
+        console.log(["addGamePiece:isPlayerToken:", isPlayerToken])
+        Socket.emit('placeGamePiece', 'xxx', {type: isPlayerToken[1], left: 100, top: 100, rotation: 0})
+
+      } else if (isGamePiece !== null) {
+        console.log(["addGamePiece:isGamePiece:", isGamePiece])
+        Socket.emit('placeGamePiece', 'xxx', {type: isGamePiece[1], left: 100, top: 100, rotation: 0})
+      }
+    },
 		rollDice: function() {
       Socket.emit('rollDice', 'xxx')
-
-			// let speedDie = d(1,6);
-
-			// switch(speedDie) {
-			// 	case 4:
-			// 	case 5:
-			// 		speedDie = "Mr. Monopoly"
-			// 		break;
-			// 	case 6:
-			// 		speedDie = "Bus"
-			// 		break;
-			// }
-			// this.diceValues = [d(1,6), d(1,6), speedDie];
 		},
     setUserId: function(){
       // console.log(['this.$refs.userId', this.$refs.userId.value]);
@@ -304,16 +359,30 @@ export default {
 </style>
 
 <style scoped>
+#game-table {
+    width: 1000px;
+    margin: 0 auto;
+}
+div.gutter {
+    width: 190px;
+    height: 800px;
+    display: inline-block;
+    float: right;
+}
+
 #game-board {
+    border: 1px solid blue;
+    display: inline-block;
     background-image: url("../assets/Monopoly-Board.jpg");
-    display: block;
     width: 800px;
     height: 800px;
     background-size: 800px;
     background-repeat: no-repeat;
     position: relative;
-    margin: 0 auto;
-    border: 1px solid blue;
+    float: left;
+}
+div.game-pieces div{
+  display: inline-block;
 }
 
 h1, h2 {
