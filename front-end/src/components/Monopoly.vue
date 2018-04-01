@@ -25,79 +25,56 @@
           <button @click="initCards">Init Decks</button>
           <button @click="shuffleCards">Shuffle Decks</button>
           <button @click="drawChanceCard">Draw Chance Card</button>
-          <ul>
-            <li>chance cards</li>
-            <li v-for="card in chanceCards">{{ card.body }}</li>
-          </ul>
+          <button @click="drawCommunityChestCard">Draw Community Chest Card</button>
         </div>
 
+        <div class="hand-controls">
+					<button @click="toggleHand">{{ (this.handVisible === true) ? 'Hide Hand' : 'Show Hand' }}</button>
+        </div>
+				
+      </div>
+      <div id="game-hand" class="moveable-panel">
+				<div class="controls"><a @click="toggleHand" href="#">[ X ]</a></div>
+				<div class="canvas">
+					<Card v-for="(card, index) in cards" :key="index" :header="card.type" :body="card.body"></Card>
+				</div>
+      </div>
+      <div id="game-players" class="moveable-panel">
+				<div class="controls"><a @click="togglePlayers" href="#">[ X ]</a></div>
+				<div class="canvas">
+					<Player v-for="(player, index) in players" :key="index" :name="player.name" :avatar="player.avatar"></Player>
+				</div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-const _ = require('lodash');
-const d = require('dice-bag');
-
-window.drawGamePiece = (gp) => {
-  let gamePieceClass = `game-piece-${gp.type}`;
-  let rotation = _.get(gp, "rotation", 0);
-  let selected = _.get(gp, "selected", false);
-  let remove = _.get(gp, "remove", []);
-	let gamePieceClasses = [gamePieceClass];
-
-  if (rotation > 0) {
-		gamePieceClasses.push (`${gamePieceClass}-${gp.rotation}`);
-  }
-  if (selected === true) {
-		gamePieceClasses.push (`selected`);
-  }
-  if (gamePieceClass.match(/player-token/) !== null) {
-		gamePieceClasses.unshift (`game-piece-player-token`);
-  }
-
-  let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClasses.join(' ')}"></div>`).draggable({ 
-    containment: "#game-board", 
-    scroll: false, 
-    opacity: 0.7,
-    stack: '#game-board div', 
-    start: function( event, ui ) {
-      // const gp = ui.helper[0];
-      // self.onPickupStart (ui.helper, gp.offsetLeft, gp.offsetTop);
-    }
-  });
-  $("#game-board").append(gpDiv);
-
-  // let top = $("div#game-board")[0].offsetTop
-  // let left = parseInt($("div#game-board").css('marginLeft')); // 67; div#game-board; margin-left
-
-  console.log(["drawGamePiece:", gp.left, gp.top, `${gp.left}px`, `${gp.top}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
-
-  // $(`#${gp.uuid}`).animate({ top: `${y}px`, left: `${x}px`}, 400, 'swing', ()=>{
-  //   $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
-  // });
-  //$(`#${gp.uuid}`).fadeTo(300, 0.3, function() { $(this).fadeTo(500, 1.0); });
-
-  $(`#${gp.uuid}`).css({top: gp.top, left: gp.left, position:'absolute'});
-  // $(`#${gp.uuid}`).effect("pulsate", { times:3 }, 1000);
-  $(`#${gp.uuid}`).removeClass("selected");
-  
-  $(`#${gp.uuid}`).click((event, ui) => {
-    // console.log(["event, ui:", event, ui]);
-    $(event.target).addClass("selected");
-  });
-};
+import _ from 'lodash'
+import d from 'dice-bag'
+import Card from './Card.vue'
+import Player from './Player.vue'
 
 export default {
   name: 'Monopoly',
+	components: {
+		Card, 
+		Player, 
+	},
   data () {
     return {
       msg: "Let's play Monopoly!", 
       index: {}, 
       userId: '', 
 			diceValues: ["Roll Dice"],
-      chanceCards: [], 
+      cards: [], 
+      players: [
+				{name: 'Dave', avatar: 'iron'}, 
+				{name: 'Kevin', avatar: 'car'}, 
+				{name: 'Michael', avatar: 'dog'}, 
+				{name: 'Matthew', avatar: 'hat'}, 
+			], 
+			handVisible: false, 
     }
   }, 
   sockets:{
@@ -116,14 +93,14 @@ export default {
     }, 
     initDeck: function(data){
 			console.log(['socket:r:initDeck', data]);
-      this.chanceCards = [];
+      this.cards = [];
     }, 
     shuffleDeck: function(data){
 			console.log(['socket:r:shuffleDeck', data]);
     }, 
     drawCard: function(data){
 			console.log(['socket:r:drawCard', data]);
-      this.chanceCards.push (data.card[0][0]);
+      this.cards.push (data.card[0][0]);
     }, 
     renderGameBoard: function(data){
       console.log(["data:", data])
@@ -134,6 +111,36 @@ export default {
     }, 
   },
   methods: {
+
+    toggleHand: function(){
+			if (this.handVisible === true) {
+				$("#game-hand").animate({top: "0px", height: "0px"}, 600, 'easeOutCirc', () => {
+					$("#game-hand").hide();
+					this.handVisible = !(this.handVisible === true);
+				})
+			} else {
+				$("#game-hand").show().animate({top: "-600px", height: "600px"}, 600, 'easeInOutBack', () => {
+					this.handVisible = !(this.handVisible === true);
+				});
+			}
+    },
+
+    togglePlayers: function(){
+			const div = '#game-players';
+			const visibilityControl = 'playersVisible';
+
+			if (this[visibilityControl] === true) {
+				$(div).animate({top: "0px", height: "0px"}, 600, 'easeOutCirc', () => {
+					$(div).hide();
+					this[visibilityControl] = !(this[visibilityControl] === true);
+				})
+			} else {
+				$(div).show().animate({top: "-600px", height: "600px"}, 600, 'easeInOutBack', () => {
+					this[visibilityControl] = !(this[visibilityControl] === true);
+				});
+			}
+    },
+	
     initCards: function(event){
       console.log(['initCards', event]);
       Socket.emit('initDeck', 'xxx', {type: 'chance'})
@@ -141,10 +148,15 @@ export default {
     shuffleCards: function(event){
       console.log(['shuffleCards', event]);
       Socket.emit('shuffleDeck', 'xxx', {type: 'chance'})
+      Socket.emit('shuffleDeck', 'xxx', {type: 'communityChest'})
     },
     drawChanceCard: function(event){
       console.log(['drawChanceCard', event]);
       Socket.emit('drawCard', 'xxx', {type: 'chance'})
+    },
+    drawCommunityChestCard: function(event){
+      console.log(['drawCommunityChestCard', event]);
+      Socket.emit('drawCard', 'xxx', {type: 'communityChest'})
     },
     addGamePiece: function(event, ui) {
       // console.log(['addGamePiece:event', event]);
@@ -224,14 +236,20 @@ export default {
 
     $( "#game-board" ).droppable({
       drop: function( event, ui ) {
-        let top = ui.position.top; 
-        let left = ui.position.left; 
-
-        console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, `${event.offsetX}px`, `${event.clientY}px`, ui.helper[0].id, $(ui.helper[0].id)])
-        
-        Socket.emit('placeGamePiece', 'xxx', {uuid: ui.helper[0].id, left, top})
+				if (_.indexOf(ui.helper[0].classList, 'game-piece') > -1) {
+					dropOnGameboard(event, ui);
+				} else {
+					return;
+				}
       }
     });
+
+    $( ".moveable-panel" ).draggable({
+			start: function( event, ui ) {
+				// const gp = ui.helper[0];
+				// self.onPickupStart (ui.helper, gp.offsetLeft, gp.offsetTop);
+			}
+		});
 
     $( document ).keypress(function(event) {
       let gp, left, top, rotation, type = null;
@@ -239,6 +257,14 @@ export default {
         case 'd':
           gp = $(".game-piece.selected")[0];
           Socket.emit('removeGamePiece', 'xxx', {uuid: gp.id});
+          break;
+
+        case 'h':
+					self.toggleHand();
+          break;
+
+        case 'u':
+					self.togglePlayers();
           break;
 
         case 'c':
@@ -257,11 +283,76 @@ export default {
           break;
       }
     });
+
+		// window.Event.$on('asdf', () => { console.log('asdf'); });
     
     Socket.emit('initGameBoard', 'xxx')
 
+		$("#game-hand").show().animate({top: "-600px", height: "600px"}, 600, 'easeInOutBack', () => {
+			this.handVisible = !(this.handVisible === true);
+		});
+
   }, 
 }
+
+const dropOnGameboard = (event, ui) => {
+	let top = ui.position.top; 
+	let left = ui.position.left; 
+
+	console.log(["droppable:", event, ui, event.offsetX, event.clientY, left, top, `${event.offsetX}px`, `${event.clientY}px`, ui.helper, ui.helper[0].id, $(ui.helper[0].id)])
+	
+	Socket.emit('placeGamePiece', 'xxx', {uuid: ui.helper[0].id, left, top})
+};
+
+window.drawGamePiece = (gp) => {
+  let gamePieceClass = `game-piece-${gp.type}`;
+  let rotation = _.get(gp, "rotation", 0);
+  let selected = _.get(gp, "selected", false);
+  let remove = _.get(gp, "remove", []);
+	let gamePieceClasses = [gamePieceClass];
+
+  if (rotation > 0) {
+		gamePieceClasses.push (`${gamePieceClass}-${gp.rotation}`);
+  }
+  if (selected === true) {
+		gamePieceClasses.push (`selected`);
+  }
+  if (gamePieceClass.match(/player-token/) !== null) {
+		gamePieceClasses.unshift (`game-piece-player-token`);
+  }
+
+  let gpDiv = $(`<div id="${gp.uuid}" class="game-piece ${gamePieceClasses.join(' ')}"></div>`).draggable({ 
+    containment: "#game-board", 
+    scroll: false, 
+    opacity: 0.7,
+    stack: '#game-board div', 
+    start: function( event, ui ) {
+      // const gp = ui.helper[0];
+      // self.onPickupStart (ui.helper, gp.offsetLeft, gp.offsetTop);
+    }
+  });
+  $("#game-board").append(gpDiv);
+
+  // let top = $("div#game-board")[0].offsetTop
+  // let left = parseInt($("div#game-board").css('marginLeft')); // 67; div#game-board; margin-left
+
+  console.log(["drawGamePiece:", gp.left, gp.top, `${gp.left}px`, `${gp.top}px`, `#${gp.uuid}`, $(`#${gp.uuid}`)])
+
+  // $(`#${gp.uuid}`).animate({ top: `${y}px`, left: `${x}px`}, 400, 'swing', ()=>{
+  //   $(`#${gp.uuid}`).css({top: y, left: x, position:'absolute'});
+  // });
+  //$(`#${gp.uuid}`).fadeTo(300, 0.3, function() { $(this).fadeTo(500, 1.0); });
+
+  $(`#${gp.uuid}`).css({top: gp.top, left: gp.left, position:'absolute'});
+  // $(`#${gp.uuid}`).effect("pulsate", { times:3 }, 1000);
+  $(`#${gp.uuid}`).removeClass("selected");
+  
+  $(`#${gp.uuid}`).click((event, ui) => {
+    // console.log(["event, ui:", event, ui]);
+    $(event.target).addClass("selected");
+  });
+};
+
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -301,7 +392,7 @@ export default {
 .xselected {
   box-shadow: 0 0px 36px 0 rgba(239,211,105, 1), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
-.selected {
+.game-piece.selected {
   border: 3px solid rgba(239,211,105, 1);
 }
 
@@ -368,6 +459,12 @@ div.gutter {
     height: 800px;
     display: inline-block;
     float: right;
+		position: relative;
+}
+
+div.gutter .hand-controls {
+	position: relative;
+	bottom: 0px;
 }
 
 #game-board {
@@ -381,6 +478,31 @@ div.gutter {
     position: relative;
     float: left;
 }
+
+div.moveable-panel {
+	clear: both; 
+	width: 100%;
+	height: auto;
+	/* border: 3px solid black; */
+  box-shadow: 0 -8px 12px 0 rgba(0,0,0,0.16), 0 2px 10px 0 rgba(0,0,0,0.12);
+	background-color: #efefef;
+	width: 100%;
+	height: 0px;
+	position: relative;
+	border-radius: 10px 10px 0 0;
+	display: none;
+}
+
+div.moveable-panel .controls {
+	float: right; 
+}
+
+div.moveable-panel .canvas {
+	position: relative;
+	overflow: scroll;
+	height: 600px;
+}
+
 div.game-pieces div{
   display: inline-block;
 }
